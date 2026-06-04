@@ -48,3 +48,9 @@ Thumbs.db
 *.mov
 *.wmv
 
+
+__pycache__/
+*.pyc
+
+*.json
+venv/

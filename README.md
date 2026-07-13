@@ -1,2 +1,1 @@
-# wtccm
-War Thunder Custom Content Manager
+# WTCCM - War Thunder Custom Content Manager

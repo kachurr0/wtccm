@@ -3,23 +3,25 @@ import json
 from pathlib import Path
 import os
 import winreg as wr
+from typing import Optional
+
 import vdf
 
 class ConfigManager:
     def __init__(self):
         self.dir_path = Path(os.environ['LOCALAPPDATA']) / 'WTUtils' / 'WTCCM'
-        self.__default_template: dict[str, dict[str, str]] = {
+        self.__default_template: dict[str, dict[str, str] | list[str]] = {
             'path': {
                 'downloads': '',
                 'wt': '',
                 'winrar': '',
                 'documents': '',
                 'sights': ''
-            }
+            },
+            'enabledSoundmods': []
         }
         self.loaded = None
         self.load()
-        self.reset()
 
     # Basic control functions. Do not return anything.
     def load(self):
@@ -101,3 +103,14 @@ class ConfigManager:
         self.loaded['path']['sights'] = str(sights_folder)
         self.save()
         return Path(sights_folder)
+
+    def save_enabled_mods(self, values:list[Path]):
+        self.loaded['enabledSoundmods'] = []
+        for value in values:
+            self.loaded['enabledSoundmods'].append(str(value))
+        self.save()
+
+    @property
+    def enabled_mods(self) -> Optional[list[Path]]:
+        if not self.loaded['enabledSoundmods']: return None
+        return [Path(x) for x in self.loaded['enabledSoundmods']]

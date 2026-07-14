@@ -9,6 +9,8 @@ from config import ConfigManager
 from archive import ArchiveManager
 from pathlib import Path
 
+from new.soundmod import SoundManager
+
 
 class WTCCM(Tk):
     def __init__(self):
@@ -138,6 +140,7 @@ class SoundmodsPage(ttk.Frame):
         super().__init__(parent)
 
         self.app = app
+        self.soundManager = SoundManager(self.app.config)
 
         # CHATGPT GENERATED UI, stollen from Barotrauma, but I drew it in excildraw
         # ---------------- Настройка сетки ----------------
@@ -189,18 +192,20 @@ class SoundmodsPage(ttk.Frame):
         self.enable_button = ttk.Button(
             self.center_frame,
             text="→",
-            width=8
+            width=8,
+            command=self.handle_enable_button
         )
         self.enable_button.pack(pady=5)
 
         self.disable_button = ttk.Button(
             self.center_frame,
             text="←",
-            width=8
+            width=8,
+            command=self.handle_disable_button
         )
         self.disable_button.pack(pady=(10, 25))
 
-        self.enable_var = BooleanVar(value=self.soundmod_enabled)
+        self.enable_var = BooleanVar(value=self.soundManager.soundmod_enabled)
         self.multiple_var = BooleanVar(value=False)
 
         self.enable_checkbox = ttk.Checkbutton(
@@ -241,33 +246,44 @@ class SoundmodsPage(ttk.Frame):
             height=15
         )
         self.enabled_listbox.pack(fill="both", expand=True)
-
+        self.update_disabledBox()
 
     def handle_multiple_checkbox(self):
         ...
 
     def handle_enable_checkbox(self):
-        self.toggle_soundmod()
-        self.enable_var.set(self.soundmod_enabled)
+        self.soundManager.toggle_soundmod()
+        self.enable_var.set(self.soundManager.soundmod_enabled)
 
-    def toggle_soundmod(self, forcevalue: Optional[bool] = None) -> bool:
-        """Toggles the enable_mod in config.blk and returns current value."""
-        path = self.app.config.wt_path / 'config.blk'
-        original_cfg = path.read_text(encoding='utf-8')
-        if forcevalue is None:
-            forcevalue = False if self.soundmod_enabled else True
+    def update_disabledBox(self):
+        self.disabled_listbox.delete(0, 'end')
+        disabled_mods = self.soundManager.disabled_mods
+        if not disabled_mods: return
+        for idx, path in enumerate(disabled_mods):
+            self.disabled_listbox.insert(END, path.name)
+            # coloring alternative lines of listbox
+            self.disabled_listbox.itemconfig(idx,
+                                    bg="white" if idx % 2 == 0 else "lavender")
 
-        if forcevalue:
-            cfg = original_cfg.replace('enable_mod:b=no', 'enable_mod:b=yes')
-            path.write_text(cfg, encoding="utf-8")
-            return True
+    def update_enabledBox(self, values: list[str] = None):
+        self.enabled_listbox.delete(0, 'end')
+        if not values: return
+        for idx, value in enumerate(values):
+            self.enabled_listbox.insert(END, value)
+            # coloring alternative lines of listbox
+            self.enabled_listbox.itemconfig(idx,
+                                    bg="white" if idx % 2 == 0 else "lavender")
 
-        else:
-            cfg = original_cfg.replace('enable_mod:b=yes', 'enable_mod:b=no')
-            path.write_text(cfg, encoding="utf-8")
-            return False
 
-    @property
-    def soundmod_enabled(self) -> bool:
-        path = self.app.config.wt_path / 'config.blk'
-        return True if path.read_text(encoding='utf-8').find('enable_mod:b=yes') != -1 else False
+    def handle_enable_button(self):
+        selected = self.disabled_listbox.selection_get()
+        mod_path = self.soundManager.stored_path / selected
+        self.soundManager.enable_mod(mod=mod_path)
+        self.update_enabledBox([selected])
+        self.update_disabledBox()
+
+    def handle_disable_button(self):
+        selected = self.enabled_listbox.selection_get()
+        self.soundManager.disable_mod(mod=self.soundManager.stored_path / selected)
+        self.update_enabledBox()
+        self.update_disabledBox()

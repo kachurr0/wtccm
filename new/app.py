@@ -5,6 +5,8 @@ from tkinter import ttk
 from typing import Optional
 
 from PIL import ImageTk, Image
+from pyaes import decrypt_stream
+
 from config import ConfigManager
 from archive import ArchiveManager
 from pathlib import Path
@@ -32,7 +34,6 @@ class WTCCM(Tk):
 
         self.notebook.add(self.archives_page, text="Archives")
         self.notebook.add(self.soundmods_page, text="Sound mods")
-
 
     def set_icon(self):
         # Decoding and setting up icon
@@ -69,6 +70,7 @@ class ArchivesPage(ttk.Frame):
         self.g1 = ttk.Radiobutton(self.c, text='Skins/Camouflages', variable=self.selected_dist, value='UserSkins')
         self.g2 = ttk.Radiobutton(self.c, text='Sights', variable=self.selected_dist, value='UserSights\\all_tanks')
         self.g3 = ttk.Radiobutton(self.c, text='Missions', variable=self.selected_dist, value='UserMissions')
+        self.g4 = ttk.Radiobutton(self.c, text='Sound Mods', variable=self.selected_dist, value='sound\\mod')
 
         self.send = ttk.Button(self.c, text='Move & Unpack selected', command=self.process_archives, default='active') # как мне получить доступ к processArchives отсюда?
         self.status = ttk.Label(self.c, textvariable=self.statusmsg, anchor='w')
@@ -94,7 +96,8 @@ class ArchivesPage(ttk.Frame):
         self.g1.grid(column=1, row=1, sticky=W, padx=20)
         self.g2.grid(column=1, row=2, sticky=W, padx=20)
         self.g3.grid(column=1, row=3, sticky=W, padx=20)
-        self.tb1.grid(column=1, row=4, sticky=W, padx=20, columnspan=2)
+        self.g4.grid(column=1, row=4, sticky=W, padx=20)
+        self.tb1.grid(column=1, row=5, sticky='nw', padx=20, columnspan=2)
         self.send.grid(column=1, row=6, sticky='es')
         self.status.grid(column=0, row=7, columnspan=2, sticky='we')
         self.c.grid_columnconfigure(0, weight=1)
@@ -107,12 +110,18 @@ class ArchivesPage(ttk.Frame):
     def process_archives(self):
         archives = self.get_selected_archives()
         selected_dist = self.selected_dist.get()
-        destination = self.config.wt_path / selected_dist if selected_dist != 'UserSights\\all_tanks' else self.config.sights_path
+        if selected_dist in ['UserSkins', 'UserMissions']:
+            destination = self.config.wt_path / selected_dist
+        elif selected_dist == 'UserSights\\all_tanks':
+            destination = self.config.sights_path
+        else:
+            destination = self.config.dir_path / 'SoundMods'
 
         self.app.archive_manager.process_archives(
             archives=archives,
             destination=destination,
-            delete_archive=self.delete_after_processing.get()
+            delete_archive=self.delete_after_processing.get(),
+            create_directory=False if selected_dist == 'sound\\mod' else True,
         )
 
         self.statusmsg.set("Done!")
@@ -256,6 +265,7 @@ class SoundmodsPage(ttk.Frame):
         self.soundManager.toggle_soundmod()
         self.enable_var.set(self.soundManager.soundmod_enabled)
 
+
     def update_disabledBox(self):
         self.disabled_listbox.delete(0, 'end')
         disabled_mods = self.soundManager.disabled_mods
@@ -275,7 +285,6 @@ class SoundmodsPage(ttk.Frame):
             # coloring alternative lines of listbox
             self.enabled_listbox.itemconfig(idx,
                                     bg="white" if idx % 2 == 0 else "lavender")
-
 
     def handle_enable_button(self):
         selected = self.disabled_listbox.selection_get()

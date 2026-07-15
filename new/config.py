@@ -112,5 +112,5 @@ class ConfigManager:
 
     @property
     def enabled_mods(self) -> Optional[list[Path]]:
-        if not self.loaded['enabledSoundmods']: return None
+        if not self.loaded['enabledSoundmods']: return []
         return [Path(x) for x in self.loaded['enabledSoundmods']]

@@ -35,6 +35,8 @@ class ArchiveManager:
 
         moved_archive = destination / archive.name
 
+        dest_original_folders = [x for x in destination.iterdir() if x.is_dir()]
+
         shutil.move(archive, moved_archive)
 
         if create_directory:
@@ -52,6 +54,12 @@ class ArchiveManager:
             ],
             check=True,
         )
+
+        dest_actual_folders = [x for x in destination.iterdir() if x.is_dir()]
+        result = set(dest_actual_folders) - set(dest_original_folders)
+        dest_new_folder = result.pop()
+
+        if dest_new_folder.name == 'mod': dest_new_folder.rename(moved_archive.parent / moved_archive.stem)
 
         if delete_archive:
             moved_archive.unlink()

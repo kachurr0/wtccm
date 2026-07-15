@@ -64,7 +64,7 @@ class ArchiveManager:
         if delete_archive:
             moved_archive.unlink()
 
-    def find_recent_archives(self, days: int = 3) -> list[Path]:
+    def find_recent_archives(self, days: int = 300) -> list[Path]:
         """Возвращает список архивов, изменённых за последние N дней."""
 
         threshold = datetime.now() - timedelta(days=days)

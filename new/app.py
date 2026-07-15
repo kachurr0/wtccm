@@ -58,6 +58,12 @@ class ArchivesPage(ttk.Frame):
         self.statusmsg = StringVar()
         self.delete_after_processing = BooleanVar()
 
+        self.time_period = IntVar()
+        try:
+            # noinspection PyTypeChecker
+            self.time_period.trace_add("write", callback=lambda *_: self.update_listbox())
+        except: pass
+
         self.c = ttk.Frame(self, padding=(5, 5, 12, 0))
         self.c.grid(column=0, row=0, sticky='nwes')
         self.grid_columnconfigure(0, weight=1)
@@ -86,6 +92,9 @@ class ArchivesPage(ttk.Frame):
                                     command=lambda: (self.listBox.selection_clear(0, END)),
                                     default='active', width=10)
 
+        self.time_period_spinbox = ttk.Spinbox(self.c, from_=1, to=1000, textvariable=self.time_period, width=10, command=lambda: self.update_listbox(), increment=10)
+        self.time_period_label = ttk.Label(self.c, text='Time period:')
+
         self.refreshBtn.grid(column=0, row=6, sticky='nw', padx=160)
 
         self.selectAllBtn.grid(column=0, row=6, sticky='nw', ipadx=5)
@@ -98,6 +107,8 @@ class ArchivesPage(ttk.Frame):
         self.g3.grid(column=1, row=3, sticky=W, padx=20)
         self.g4.grid(column=1, row=4, sticky=W, padx=20)
         self.tb1.grid(column=1, row=5, sticky='nw', padx=20, columnspan=2)
+        self.time_period_spinbox.grid(column=1, row=5, sticky='nw', padx=100, pady=40)
+        self.time_period_label.grid(column=1, row=5, sticky='nw', padx=20, pady=40)
         self.send.grid(column=1, row=6, sticky='es')
         self.status.grid(column=0, row=7, columnspan=2, sticky='we')
         self.c.grid_columnconfigure(0, weight=1)
@@ -105,6 +116,7 @@ class ArchivesPage(ttk.Frame):
 
         self.selected_dist.set('UserSkins')
         self.delete_after_processing.set(True)
+        self.time_period.set(10)
         self.update_listbox()
 
     def process_archives(self):
@@ -126,6 +138,8 @@ class ArchivesPage(ttk.Frame):
 
         self.statusmsg.set("Done!")
         self.update_listbox()
+        self.app.soundmods_page.update_enabledBox()
+        self.app.soundmods_page.update_disabled()
 
     def get_selected_archives(self):
         selection = []
@@ -135,7 +149,7 @@ class ArchivesPage(ttk.Frame):
         return selection
 
     def update_listbox(self):
-        recent_archives = self.archive_manager.find_recent_archives(10)
+        recent_archives = self.archive_manager.find_recent_archives(self.time_period.get()) #Todo динамический выбор периода времени + сохранять в конфиг
         self.listBox.delete(0, 'end')
         for each_item in range(len(recent_archives)):
             self.listBox.insert(END, recent_archives[each_item])

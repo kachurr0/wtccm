@@ -1,7 +1,7 @@
 import shutil
 from typing import Optional
 from pathlib import Path
-from new.config import ConfigManager
+from config import ConfigManager
 
 
 class SoundManager:

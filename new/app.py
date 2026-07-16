@@ -11,7 +11,7 @@ from config import ConfigManager
 from archive import ArchiveManager
 from pathlib import Path
 
-from new.soundmod import SoundManager
+from soundmod import SoundManager
 
 
 class WTCCM(Tk):
